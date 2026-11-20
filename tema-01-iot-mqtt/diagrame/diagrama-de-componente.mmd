@@ -1,0 +1,28 @@
+flowchart LR
+    subgraph DEV["Device simulator"]
+        P["PeriodicTelemetryTask"]
+        Q[("AlarmEvent queue")]
+        S["SporadicAlarmTask"]
+        A["AperiodicCommandTask"]
+        P -- "temperature + threshold" --> Q
+        Q --> S
+    end
+
+    B(("MQTT broker"))
+
+    subgraph SRV["Business service"]
+        M["MessageProcessor"]
+        C["CommandConsole"]
+        D["Dashboard"]
+        CSV[("CSV storage")]
+        M --> CSV
+        M --> D
+        C --> D
+    end
+
+    P -- "telemetry" --> B
+    S -- "alarm" --> B
+    A -- "status" --> B
+    B -- "telemetry / alarm / status" --> M
+    C -- "commands" --> B
+    B -- "commands" --> A

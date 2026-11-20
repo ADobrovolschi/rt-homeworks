@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="570" viewBox="0 0 1180 570">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#334155"/>
+    </marker>
+    <style>
+      text{font:15px Arial,sans-serif;fill:#172033}.title{font-size:20px;font-weight:bold}
+      .box{fill:#f8fafc;stroke:#475569;stroke-width:2}.group{fill:#eff6ff;stroke:#2563eb;stroke-width:2}
+      .line{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#arrow)}
+      .label{font-size:13px;fill:#334155}
+    </style>
+  </defs>
+  <rect x="18" y="18" width="1144" height="534" rx="14" fill="white" stroke="#cbd5e1"/>
+  <rect class="group" x="42" y="65" width="360" height="432" rx="12"/>
+  <text class="title" x="222" y="98" text-anchor="middle">Device simulator</text>
+  <rect class="box" x="78" y="130" width="288" height="54" rx="8"/>
+  <text x="222" y="163" text-anchor="middle">PeriodicTelemetryTask</text>
+  <rect class="box" x="78" y="235" width="288" height="54" rx="8"/>
+  <text x="222" y="268" text-anchor="middle">AlarmEvent queue (temp + prag)</text>
+  <rect class="box" x="78" y="340" width="288" height="54" rx="8"/>
+  <text x="222" y="373" text-anchor="middle">SporadicAlarmTask</text>
+  <rect class="box" x="78" y="420" width="288" height="54" rx="8"/>
+  <text x="222" y="453" text-anchor="middle">AperiodicCommandTask</text>
+  <path class="line" d="M222 184 L222 230"/>
+  <path class="line" d="M222 289 L222 335"/>
+  <text class="label" x="234" y="216">eveniment alarmă</text>
+
+  <circle cx="580" cy="275" r="95" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text class="title" x="580" y="267" text-anchor="middle">Broker MQTT</text>
+  <text x="580" y="294" text-anchor="middle">publish / subscribe</text>
+
+  <rect class="group" x="758" y="65" width="380" height="432" rx="12"/>
+  <text class="title" x="948" y="98" text-anchor="middle">Business service</text>
+  <rect class="box" x="790" y="130" width="316" height="54" rx="8"/>
+  <text x="948" y="163" text-anchor="middle">MessageProcessor</text>
+  <rect class="box" x="790" y="235" width="148" height="54" rx="8"/>
+  <text x="864" y="268" text-anchor="middle">Dashboard</text>
+  <rect class="box" x="958" y="235" width="148" height="54" rx="8"/>
+  <text x="1032" y="268" text-anchor="middle">CSV storage</text>
+  <rect class="box" x="790" y="355" width="316" height="54" rx="8"/>
+  <text x="948" y="388" text-anchor="middle">CommandConsole</text>
+  <path class="line" d="M948 184 L864 230"/>
+  <path class="line" d="M948 184 L1032 230"/>
+  <path class="line" d="M864 355 L864 294"/>
+  <text class="label" x="976" y="212">persistare</text>
+
+  <path class="line" d="M366 157 C445 157 455 220 485 243"/>
+  <text class="label" x="395" y="178">telemetry</text>
+  <path class="line" d="M366 367 C450 367 455 322 485 306"/>
+  <text class="label" x="404" y="355">alarm</text>
+  <path class="line" d="M366 447 C440 447 468 375 516 354"/>
+  <text class="label" x="397" y="431">status</text>
+  <path class="line" d="M675 245 C710 215 724 157 784 157"/>
+  <text class="label" x="690" y="195">mesaje către service</text>
+  <path class="line" d="M790 382 C730 390 705 345 665 322"/>
+  <text class="label" x="697" y="382">comenzi</text>
+  <path class="line" d="M485 322 C450 360 420 430 366 447"/>
+  <text class="label" x="393" y="407">command topic</text>
+</svg>

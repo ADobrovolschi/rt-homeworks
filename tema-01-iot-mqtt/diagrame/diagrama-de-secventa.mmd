@@ -1,0 +1,32 @@
+sequenceDiagram
+    autonumber
+    participant P as Periodic task
+    participant Q as Alarm queue
+    participant S as Sporadic task
+    participant B as MQTT broker
+    participant M as MessageProcessor
+    participant C as CommandConsole
+    participant A as Aperiodic task
+
+    rect rgb(235, 245, 255)
+        Note over P,M: Scenariul 1 — temperatura depășește pragul
+        P->>P: Citește temperatura peste prag
+        P->>B: publish telemetry
+        B->>M: telemetry payload
+        M->>M: Salvează telemetria și actualizează dashboard
+        P->>Q: enqueue (temperatură, prag)
+        Q->>S: take event
+        S->>B: publish alarm cu pragul capturat
+        B->>M: alarm payload
+        M->>M: Salvează CSV și actualizează dashboard
+    end
+
+    rect rgb(245, 250, 235)
+        Note over C,A: Scenariul 2 — SET_INTERVAL și confirmare
+        C->>B: publish SET_INTERVAL 1000
+        B->>A: comanda în coada aperiodică
+        A->>A: Validează și schimbă perioada
+        A->>B: publish status OK SET_INTERVAL 1000
+        B->>M: status payload
+        M->>M: Salvează CSV și afișează confirmarea
+    end

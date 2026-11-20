@@ -1,0 +1,19 @@
+flowchart LR
+    subgraph P["Task periodic — T = 2 s"]
+        direction LR
+        P0["0 s<br/>job"] --> P2["2 s<br/>job"] --> P4["4 s<br/>job"] --> P6["6 s<br/>job"] --> P8["8 s<br/>job"] --> P10["10 s<br/>job"]
+    end
+
+    subgraph S["Task sporadic — interval minim = 5 s"]
+        direction LR
+        S2["2 s<br/>alarmă publicată"] --> S4["4 s<br/>respinsă (< 5 s)"] --> S8["8 s<br/>alarmă publicată"]
+    end
+
+    subgraph A["Task aperiodic"]
+        direction LR
+        A5["5.3 s<br/>comanda SET_INTERVAL"] --> A6["job executat și status publicat"]
+    end
+
+    P2 -. "depășire prag" .-> S2
+    P4 -. "depășire prag" .-> S4
+    P8 -. "depășire prag" .-> S8

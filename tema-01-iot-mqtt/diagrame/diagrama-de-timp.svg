@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="500" viewBox="0 0 1100 500">
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="#334155"/>
+    </marker>
+    <style>
+      text{font:14px Arial,sans-serif;fill:#172033}.title{font-size:20px;font-weight:bold}
+      .axis{stroke:#64748b;stroke-width:1.5}.grid{stroke:#cbd5e1;stroke-width:1;stroke-dasharray:4 4}
+      .periodic{fill:#bfdbfe;stroke:#2563eb;stroke-width:2}.sporadic{fill:#bbf7d0;stroke:#16a34a;stroke-width:2}
+      .rejected{fill:#fee2e2;stroke:#dc2626;stroke-width:2}.aperiodic{fill:#fde68a;stroke:#d97706;stroke-width:2}
+      .arrow{stroke:#334155;stroke-width:1.5;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <text class="title" x="550" y="32" text-anchor="middle">Diagramă de timp — interval schematic 0–10 s</text>
+  <text x="40" y="112" font-weight="bold">Periodic</text>
+  <text x="40" y="235" font-weight="bold">Sporadic</text>
+  <text x="40" y="358" font-weight="bold">Aperiodic</text>
+  <path class="axis" d="M150 420 H1030"/>
+  <g>
+    <path class="grid" d="M150 70 V420"/><path class="grid" d="M238 70 V420"/>
+    <path class="grid" d="M326 70 V420"/><path class="grid" d="M414 70 V420"/>
+    <path class="grid" d="M502 70 V420"/><path class="grid" d="M590 70 V420"/>
+    <path class="grid" d="M678 70 V420"/><path class="grid" d="M766 70 V420"/>
+    <path class="grid" d="M854 70 V420"/><path class="grid" d="M942 70 V420"/>
+    <path class="grid" d="M1030 70 V420"/>
+    <text x="150" y="445" text-anchor="middle">0</text><text x="238" y="445" text-anchor="middle">1</text>
+    <text x="326" y="445" text-anchor="middle">2</text><text x="414" y="445" text-anchor="middle">3</text>
+    <text x="502" y="445" text-anchor="middle">4</text><text x="590" y="445" text-anchor="middle">5</text>
+    <text x="678" y="445" text-anchor="middle">6</text><text x="766" y="445" text-anchor="middle">7</text>
+    <text x="854" y="445" text-anchor="middle">8</text><text x="942" y="445" text-anchor="middle">9</text>
+    <text x="1030" y="445" text-anchor="middle">10 s</text>
+  </g>
+  <g>
+    <rect class="periodic" x="155" y="88" width="26" height="38" rx="4"/><text x="168" y="82" text-anchor="middle">J0</text>
+    <rect class="periodic" x="331" y="88" width="26" height="38" rx="4"/><text x="344" y="82" text-anchor="middle">J1</text>
+    <rect class="periodic" x="507" y="88" width="26" height="38" rx="4"/><text x="520" y="82" text-anchor="middle">J2</text>
+    <rect class="periodic" x="683" y="88" width="26" height="38" rx="4"/><text x="696" y="82" text-anchor="middle">J3</text>
+    <rect class="periodic" x="859" y="88" width="26" height="38" rx="4"/><text x="872" y="82" text-anchor="middle">J4</text>
+    <rect class="periodic" x="1035" y="88" width="26" height="38" rx="4"/><text x="1048" y="82" text-anchor="middle">J5</text>
+    <text x="150" y="148">Eliberări pe grilă, fiecare job publică telemetrie; depășirile de prag generează evenimente.</text>
+  </g>
+  <g>
+    <rect class="sporadic" x="316" y="209" width="42" height="42" rx="6"/><text x="337" y="235" text-anchor="middle">J</text>
+    <text x="337" y="198" text-anchor="middle">2 s</text>
+    <rect class="rejected" x="481" y="209" width="42" height="42" rx="6"/><path d="M488 216 L516 244 M516 216 L488 244" stroke="#dc2626" stroke-width="3"/>
+    <text x="502" y="198" text-anchor="middle">4 s</text>
+    <rect class="sporadic" x="844" y="209" width="42" height="42" rx="6"/><text x="865" y="235" text-anchor="middle">J</text>
+    <text x="865" y="198" text-anchor="middle">8 s</text>
+    <text x="337" y="270" text-anchor="middle">publicată</text><text x="502" y="270" text-anchor="middle">respinsă</text>
+    <text x="865" y="270" text-anchor="middle">publicată</text>
+    <path class="arrow" d="M337 150 V203"/><path class="arrow" d="M513 150 V203"/><path class="arrow" d="M865 150 V203"/>
+    <text x="150" y="293">J0/J1/J2… sunt joburile periodice; dintre alarmele la 2 s și 4 s nu trec 5 s.</text>
+  </g>
+  <g>
+    <rect class="aperiodic" x="610" y="330" width="72" height="48" rx="6"/>
+    <text x="646" y="350" text-anchor="middle">comandă</text><text x="646" y="368" text-anchor="middle">5.3 s</text>
+    <rect class="aperiodic" x="700" y="330" width="110" height="48" rx="6"/>
+    <text x="755" y="350" text-anchor="middle">job + status</text><text x="755" y="368" text-anchor="middle">aperiodic</text>
+    <path class="arrow" d="M682 354 H696"/>
+    <text x="150" y="398">SET_INTERVAL poate actualiza perioada periodică din următorul ciclu.</text>
+  </g>
+</svg>

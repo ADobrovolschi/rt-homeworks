@@ -119,21 +119,44 @@ Exemple simple de diagrame, desenate în [draw.io](https://app.diagrams.net). Su
 | Diagramă de componente | [`diagrama-de-componente.png`](exemple/03-diagrame/diagrama-de-componente.png) | componente UML și interfețele oferite / folosite între ele |
 | Diagramă de secvență | [`diagrama-de-secventa.png`](exemple/03-diagrame/diagrama-de-secventa.png) | participanți, mesaje sincrone, răspunsuri și un mesaj asincron |
 
-Diagramele de componente și de secvență sunt generice: ilustrează doar notația, nu soluția temei.
-
 Fișierul `.drawio` se deschide cu aplicația draw.io (desktop), în browser pe [app.diagrams.net](https://app.diagrams.net) sau cu extensia Draw.io Integration din VS Code / IntelliJ.
 
 ### `start/`
 
-Două proiecte Maven care compilează. Sunt deja implementate conexiunea MQTT (`MqttConnection`), senzorul simulat (`TemperatureSensor`) și stocarea în fișiere CSV (`CsvStorage`). Locurile unde trebuie să lucrați sunt marcate cu `TODO 1` … `TODO 6`.
+Soluția cuprinde două proiecte Maven: `device-simulator` și `business-service`. Conexiunea MQTT, senzorul simulat și stocarea CSV sunt furnizate; logica taskurilor și integrarea dintre componente sunt implementate în proiecte.
+
+#### Ce am implementat
+
+- **Task periodic**: citește senzorul și publică telemetrie pe `telemetry`, folosind eliberări programate cu ceas monoton și așteptare absolută. La depășirea pragului pune în coada de alarme temperatura și pragul observate de același job.
+- **Task sporadic**: publică alarmele și respinge evenimentele sosite înainte să expire intervalul minim de 5 s. Mesajul alarmei include pragul capturat când s-a detectat depășirea.
+- **Task aperiodic**: execută `SET_INTERVAL`, `SET_THRESHOLD`, `RESET` și `STATUS`; validează parametrii și publică o confirmare sau `ERROR` pe `status`.
+- **Serviciul business**: validează mesajele primite, salvează payload-ul original în CSV, actualizează dashboard-ul sincronizat și afișează imediat alarmele și confirmările.
+- **Consola operatorului**: afișează dashboard-ul cu `show` și publică comenzile către topic-ul dispozitivului.
+- **Configurare**: ambele aplicații folosesc ID-ul de student `dobrovolschi-alexandru`; înlocuiți-l cu ID-ul propriu dacă folosiți alt broker namespace.
+- **Diagrame**: sursele Mermaid și imaginile SVG corespunzătoare sunt în [`diagrame/`](diagrame/README.md); acestea descriu arhitectura implementată, cele două scenarii de secvență și o execuție schematică de 10 s.
+
+#### Verificare
+
+Am verificat compilarea și testele Maven pentru ambele proiecte:
 
 ```bash
-cd start/device-simulator
-mvn -q compile exec:java -Dexec.args="device-1"     # alt terminal: -Dexec.args="device-2"
-
-cd start/business-service
-mvn -q compile exec:java
+mvn -q -f tema-01-iot-mqtt/start/business-service/pom.xml clean test
+mvn -q -f tema-01-iot-mqtt/start/device-simulator/pom.xml clean test
 ```
+
+Am verificat și comunicarea cu brokerul: serviciul a primit mesaje MQTT de telemetrie de la `device-1` și le-a salvat în `start/business-service/data/telemetry.csv`. Proiectele nu conțin teste automate în `src/test`, deci testele Maven verifică în principal compilarea.
+
+#### Pornire locală
+
+Porniți mai întâi serviciul, apoi simulatorul, în terminale separate, din rădăcina repository-ului:
+
+```bash
+mvn -f tema-01-iot-mqtt/start/business-service/pom.xml -q compile exec:java
+
+mvn -f tema-01-iot-mqtt/start/device-simulator/pom.xml -q compile exec:java -Dexec.args="device-1"
+```
+
+În consola serviciului, folosiți `show` pentru starea device-urilor sau, de exemplu, `device-1 STATUS` pentru a verifica și fluxul de comenzi și confirmări. Opriți fiecare aplicație cu `Ctrl+C` în terminalul ei.
 
 ## Brokerul MQTT
 

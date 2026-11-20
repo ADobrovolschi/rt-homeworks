@@ -19,6 +19,9 @@ public class MessageProcessor implements Runnable {
     private final Dashboard dashboard;
 
     public MessageProcessor(String kind, BlockingQueue<String> inbox, CsvStorage storage, Dashboard dashboard) {
+        if (!kind.equals("telemetry") && !kind.equals("alarm") && !kind.equals("status")) {
+            throw new IllegalArgumentException("Unsupported message kind: " + kind);
+        }
         this.kind = kind;
         this.inbox = inbox;
         this.storage = storage;
@@ -27,12 +30,76 @@ public class MessageProcessor implements Runnable {
 
     @Override
     public void run() {
-        // TODO 4: într-o buclă:
-        //   - preluați un mesaj: inbox.take()
-        //   - salvați mesajul în fișierul CSV: storage.append(kind, mesaj)
-        //     (CsvStorage este gata implementată)
-        //   - actualizați dashboard-ul, în funcție de kind
-        //   - alarmele și confirmările se afișează imediat în consolă
-        //   - un mesaj greșit (format invalid) nu trebuie să oprească thread-ul
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                String message = inbox.take();
+                // Preserve the received payload even when it fails validation, for later diagnosis.
+                storage.append(kind, message);
+                try {
+                    process(message);
+                } catch (IllegalArgumentException e) {
+                    System.err.printf("[%s] mesaj invalid, salvat în CSV: %s (%s)%n",
+                            kind, message, e.getMessage());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void process(String message) {
+        String[] fields = message.split(";", -1);
+        int expectedFields = kind.equals("alarm") ? 4 : 3;
+        if (fields.length != expectedFields || fields[0].isBlank()) {
+            throw new IllegalArgumentException("wrong number of fields");
+        }
+
+        parseTimestamp(fields[1]);
+        switch (kind) {
+            case "telemetry":
+                double temperature = parseFiniteDouble(fields[2], "temperature");
+                dashboard.updateTelemetry(fields[0], temperature);
+                break;
+            case "alarm":
+                double alarmTemperature = parseFiniteDouble(fields[2], "temperature");
+                double threshold = parseFiniteDouble(fields[3], "threshold");
+                dashboard.updateAlarm(fields[0], alarmTemperature);
+                System.out.printf("[alarm] %s: %.2f °C (prag %.2f °C)%n",
+                        fields[0], alarmTemperature, threshold);
+                break;
+            case "status":
+                if (fields[2].isBlank()) {
+                    throw new IllegalArgumentException("empty status text");
+                }
+                dashboard.updateStatus(fields[0]);
+                System.out.printf("[status] %s: %s%n", fields[0], fields[2]);
+                break;
+            default:
+                throw new IllegalStateException("Unsupported message kind: " + kind);
+        }
+    }
+
+    private static long parseTimestamp(String value) {
+        try {
+            long timestamp = Long.parseLong(value);
+            if (timestamp <= 0) {
+                throw new IllegalArgumentException("timestamp must be positive");
+            }
+            return timestamp;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid timestamp");
+        }
+    }
+
+    private static double parseFiniteDouble(String value, String fieldName) {
+        try {
+            double parsed = Double.parseDouble(value);
+            if (!Double.isFinite(parsed)) {
+                throw new IllegalArgumentException(fieldName + " must be finite");
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("invalid " + fieldName);
+        }
     }
 }

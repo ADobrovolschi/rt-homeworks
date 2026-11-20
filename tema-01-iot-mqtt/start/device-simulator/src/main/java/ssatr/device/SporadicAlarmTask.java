@@ -1,6 +1,8 @@
 package ssatr.device;
 
+import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * TASK SPORADIC: tratează alarmele de temperatură.
@@ -17,9 +19,9 @@ public class SporadicAlarmTask implements Runnable {
 
     private final String deviceId;
     private final MqttConnection mqtt;
-    private final BlockingQueue<Double> alarmEvents;
+    private final BlockingQueue<AlarmEvent> alarmEvents;
 
-    public SporadicAlarmTask(String deviceId, MqttConnection mqtt, BlockingQueue<Double> alarmEvents) {
+    public SporadicAlarmTask(String deviceId, MqttConnection mqtt, BlockingQueue<AlarmEvent> alarmEvents) {
         this.deviceId = deviceId;
         this.mqtt = mqtt;
         this.alarmEvents = alarmEvents;
@@ -27,15 +29,28 @@ public class SporadicAlarmTask implements Runnable {
 
     @Override
     public void run() {
-        // TODO 2: implementați taskul sporadic:
-        //   - așteptați un eveniment: alarmEvents.take()
-        //   - dacă de la ultima eliberare au trecut mai puțin de
-        //     MIN_INTERARRIVAL_MS, respingeți evenimentul (afișați un mesaj)
-        //   - altfel publicați pe Config.alarmTopic(deviceId) mesajul
-        //     "deviceId;timestamp;temperatura;prag"
-        //     (pragul curent poate fi transmis împreună cu temperatura sau
-        //      citit din PeriodicTelemetryTask; alegeți și justificați în raport)
-        //
-        // Vezi exemplul exemple/01-taskuri/.../SporadicTaskExample.java
+        long lastRelease = 0;
+        boolean hasReleased = false;
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                AlarmEvent event = alarmEvents.take();
+                long now = System.nanoTime();
+                long elapsed = now - lastRelease;
+                if (hasReleased && elapsed < TimeUnit.MILLISECONDS.toNanos(MIN_INTERARRIVAL_MS)) {
+                    // Reject arrivals that violate the sporadic task's minimum inter-arrival constraint.
+                    System.out.printf("[sporadic] alarmă respinsă: au trecut %d ms (minim %d ms)%n",
+                            TimeUnit.NANOSECONDS.toMillis(elapsed), MIN_INTERARRIVAL_MS);
+                    continue;
+                }
+
+                lastRelease = now;
+                hasReleased = true;
+                String message = String.format(Locale.US, "%s;%d;%.2f;%.2f",
+                        deviceId, System.currentTimeMillis(), event.temperature(), event.threshold());
+                mqtt.publish(Config.alarmTopic(deviceId), message);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

@@ -1,5 +1,6 @@
 package ssatr.device;
 
+import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
 
 /**
@@ -37,14 +38,72 @@ public class AperiodicCommandTask implements Runnable {
 
     @Override
     public void run() {
-        // TODO 3: implementați taskul aperiodic:
-        //   - preluați comenzile din coadă: commands.take()
-        //   - separați numele comenzii de parametru: command.split(" ")
-        //   - executați comanda (periodic.setPeriodMs(...), sensor.reset() etc.)
-        //   - publicați confirmarea pe Config.statusTopic(deviceId)
-        //   - o comandă necunoscută sau un parametru invalid nu trebuie să
-        //     oprească taskul: publicați "ERROR <motiv>"
-        //
-        // Vezi exemplul exemple/01-taskuri/.../AperiodicTaskExample.java
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                String command = commands.take();
+                String response;
+                try {
+                    response = execute(command);
+                } catch (IllegalArgumentException e) {
+                    response = "ERROR " + e.getMessage();
+                }
+                String message = String.format(Locale.US, "%s;%d;%s",
+                        deviceId, System.currentTimeMillis(), response);
+                mqtt.publish(Config.statusTopic(deviceId), message);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private String execute(String command) {
+        if (command == null || command.isBlank()) {
+            throw new IllegalArgumentException("empty command");
+        }
+        String[] parts = command.trim().split("\\s+");
+        switch (parts[0]) {
+            case "SET_INTERVAL":
+                requireArgumentCount(parts, 2);
+                long periodMs;
+                try {
+                    periodMs = Long.parseLong(parts[1]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("invalid interval");
+                }
+                if (periodMs <= 0) {
+                    throw new IllegalArgumentException("interval must be positive");
+                }
+                periodic.setPeriodMs(periodMs);
+                return "OK SET_INTERVAL " + periodMs;
+            case "SET_THRESHOLD":
+                requireArgumentCount(parts, 2);
+                double threshold;
+                try {
+                    threshold = Double.parseDouble(parts[1]);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("invalid threshold");
+                }
+                if (!Double.isFinite(threshold)) {
+                    throw new IllegalArgumentException("threshold must be finite");
+                }
+                periodic.setThreshold(threshold);
+                return String.format(Locale.US, "OK SET_THRESHOLD %.2f", threshold);
+            case "RESET":
+                requireArgumentCount(parts, 1);
+                sensor.reset();
+                return "OK RESET";
+            case "STATUS":
+                requireArgumentCount(parts, 1);
+                return String.format(Locale.US, "OK STATUS interval=%d threshold=%.2f",
+                        periodic.getPeriodMs(), periodic.getThreshold());
+            default:
+                throw new IllegalArgumentException("unknown command " + parts[0]);
+        }
+    }
+
+    private static void requireArgumentCount(String[] parts, int expected) {
+        if (parts.length != expected) {
+            throw new IllegalArgumentException("wrong number of arguments for " + parts[0]);
+        }
     }
 }
