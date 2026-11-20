@@ -13,7 +13,7 @@ După rezolvarea temei, veți putea să:
 
 ## Ce se schimbă față de tema 01
 
-În tema 01, device-ul era simulat de o aplicație Java. În această temă îl înlocuiți cu o placă **ESP32-C3 Super Mini**, care face exact același lucru: citește un senzor de temperatură, publică telemetria, trimite alarme și execută comenzi. **Business-service-ul rămâne neschimbat.**
+În tema 01, device-ul era simulat de o aplicație Java. În această temă îl înlocuiți cu o placă **ESP32-C3 Super Mini**, care face exact același lucru: citește un senzor de temperatură, publică telemetria, trimite alarme și execută comenzi. Business-service-ul folosește același protocol și aceleași funcții ca în tema 01.
 
 ```mermaid
 flowchart LR
@@ -74,19 +74,19 @@ Repository-ul cu laboratoare este o **sursă de exemple de cod**. Nu trebuie să
 
 ### `start/esp32_device/`
 
-Scheletul schiței Arduino. Partea de comunicație este gata: Serial, Wi-Fi, sincronizarea orei prin SNTP și clientul MQTT. Așa cum este, schița se conectează la Wi-Fi și la broker și afișează pe Serial fiecare comandă primită. **Taskurile și cozile le scrieți voi.** Încărcați scheletul pe placă înainte să scrieți cod și trimiteți-i o comandă (vezi [`exemple/README.md`](exemple/README.md#8-urmărirea-mesajelor-mqtt)), ca să verificați că placa ajunge la broker.
+Schița Arduino păstrează infrastructura furnizată pentru Serial, Wi-Fi, sincronizarea orei prin SNTP și clientul MQTT; taskurile și cozile FreeRTOS sunt implementate în `esp32_device.ino`. Încărcați schița completă pe placă și folosiți instrucțiunile din [`exemple/README.md`](exemple/README.md#8-urmărirea-mesajelor-mqtt) pentru verificarea conexiunii și a comenzilor.
 
 | Fișier | Ce conține |
 |--------|------------|
 | `config.h` | rețeaua Wi-Fi, brokerul, `STUDENT`, `DEVICE_ID` (citit din adresa MAC), valorile inițiale (perioada, pragul, intervalul minim între sosiri) și `make_topic()`, care construiește numele topic-urilor |
 | `connection.h`, `connection.cpp` | gata implementate, nu trebuie modificate (echivalentul `MqttConnection` din tema 01): `wifi_connect()`, `time_sync()`, `epoch_ms()` (timestamp-ul), `mqtt_start()`, `mqtt_publish(kind, text)`; comenzile primite sunt trimise funcției `command_received(text)` |
-| `esp32_device.ino` | aici lucrați: `read_temperature()` (senzorul intern), descrierea celor trei taskuri, `command_received()` și `setup()`, cu `TODO 0` … `TODO 3` |
+| `esp32_device.ino` | implementarea completă: `read_temperature()` (senzorul intern), cele trei taskuri FreeRTOS, `command_received()` și `setup()` |
 
 Deschideți `esp32_device.ino` în Arduino IDE (folderul și fișierul `.ino` au același nume, cum cere Arduino IDE). Setările plăcii sunt în [`exemple/README.md`](exemple/README.md#2-configurarea-arduino-ide).
 
 ### `start/business-service/`
 
-Proiectul din tema 01, copiat neschimbat, cu `TODO 4` … `TODO 6`. **Copiați aici rezolvarea voastră din tema 01** (`MessageProcessor`, `Dashboard`, `CommandConsole`) și setați `STUDENT` în `Config.java`.
+Proiectul Java este completat cu soluția business din tema 01: procesarea și validarea mesajelor MQTT, stocarea CSV, dashboard-ul și consola operatorului. `Config.STUDENT` este setat la `dobrovolschi-alexandru`; schimbați-l dacă folosiți alt namespace.
 
 ```bash
 cd start/business-service
@@ -140,18 +140,28 @@ Senzorul intern nu poate fi „resetat”, de aceea comanda `RESET` are alt efec
 
 ### 1. Device-ul ESP32 (`start/esp32_device/`)
 
-- **TODO 0 – structura aplicației** (`setup()`): crearea celor două cozi (`xQueueCreate`), înainte de `mqtt_start()`, și pornirea celor trei taskuri (`xTaskCreate`), după `mqtt_start()`, cu prioritățile alese de voi. În tema 01, partea aceasta era dată gata (`DeviceSimulator`).
-- **TODO 1 – task periodic**: la fiecare job citește senzorul și publică telemetria. Eliberările respectă grila, cu perioada $T$ (inițial `PERIOD_MS_INITIAL`). Folosiți **așteptare absolută** (`xTaskDelayUntil`), nu relativă (`delay`, `vTaskDelay`), ca să nu apară derivă. Când temperatura depășește pragul, jobul pune un eveniment în coada de alarme, fără să se blocheze (timeout 0).
-- **TODO 2 – task sporadic**: preia evenimentele din coada de alarme, publică alarmele și impune intervalul minim între sosiri `MIN_INTERARRIVAL_MS`: evenimentele care sosesc mai des sunt respinse.
-- **TODO 3 – task aperiodic**: `command_received()` pune comenzile în coada de comenzi, iar taskul le preia, execută comenzile din tabelul de mai sus și publică o confirmare pe topic-ul `status`. O comandă greșită produce un mesaj `ERROR ...` și nu oprește taskul.
+- **Structura aplicației** (`setup()`): creează cozile înainte de conectarea MQTT și pornește taskurile după `mqtt_start()`. Prioritățile sunt 4 (periodic), 3 (sporadic) și 2 (aperiodic), peste `loopTask` și sub taskurile de sistem.
+- **Task periodic**: folosește `xTaskDelayUntil`, citește senzorul intern și publică telemetrie. La depășirea pragului, pune în coada fără blocare o pereche temperatură/prag.
+- **Task sporadic**: preia evenimentele, respinge alarmele prea apropiate folosind `millis()` și publică alarmele acceptate.
+- **Task aperiodic**: callback-ul MQTT copiază comenzile într-o coadă FreeRTOS fără blocare; taskul execută comenzile, validează parametrii și publică `OK` sau `ERROR` pe topic-ul `status`.
 
 ### 2. Serviciul business (`start/business-service/`)
 
-- Rezolvarea voastră din tema 01 (`TODO 4` … `TODO 6`), adusă în acest proiect. Serviciul trebuie să afișeze în dashboard device-ul plăcii voastre (`esp32-...`), să-i salveze mesajele în fișierele CSV și să-i trimită comenzi.
+- Procesează și validează mesajele, salvează payload-urile în CSV, actualizează dashboard-ul și trimite comenzile operatorului. Afișează mesajele de alarmă și confirmările primite de la ESP32.
 
 ### 3. Funcționarea completă
 
 Sistemul trebuie să funcționeze cap-coadă: placa publică telemetria cu perioada cerută, alarmele apar când temperatura trece de prag (cel mult una la `MIN_INTERARRIVAL_MS`), iar toate cele patru comenzi trimise din consola business-service-ului sunt executate și confirmate.
+
+## Verificarea implementării
+
+Business-service-ul poate fi compilat local:
+
+```bash
+mvn -q -f tema-02-esp32-mqtt/start/business-service/pom.xml clean test
+```
+
+Faza Maven `test` compilează proiectul Java; momentan nu sunt incluse teste unitare, iar firmware-ul nu are teste automate. Firmware-ul trebuie compilat și încărcat din Arduino IDE sau cu `arduino-cli`, conform [`exemple/README.md`](exemple/README.md#9-linie-de-comandă-opțional). Verificarea cap-coadă necesită o placă ESP32-C3 conectată, acces la o rețea Wi-Fi de 2.4 GHz și monitorul Serial.
 
 ## Predare
 

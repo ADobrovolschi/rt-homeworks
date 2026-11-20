@@ -109,7 +109,7 @@ Ce diferă `connection.cpp` din schelet față de `mqtt_hello`:
 
 ## 7. Referințe despre FreeRTOS
 
-Laboratorul 0 nu creează taskuri FreeRTOS proprii. Pentru taskuri, priorități, `xTaskDelayUntil` și cozi, de care aveți nevoie la TODO 0 … 3, uitați-vă doar la:
+Laboratorul 0 nu creează taskuri FreeRTOS proprii. Pentru taskuri, priorități, `xTaskDelayUntil` și cozi, folosite în soluția temei, uitați-vă doar la:
 
 - [`docs/freertos_concepts.md`](https://github.com/automatica-cluj/rt-labs-esp32c3/blob/main/docs/freertos_concepts.md): taskuri și priorități, taskurile pornite de sistem (cu prioritățile lor), tick-ul, cozile;
 - `lab1-time-latency/periodic_jitter/periodic_jitter.ino`: un task periodic cu `xTaskCreate` și `xTaskDelayUntil`, comparat cu varianta cu așteptare relativă.
@@ -118,14 +118,14 @@ Schițele din laboratoarele 1–5 includ `rt.h`, un fișier ajutător al laborat
 
 ## 8. Urmărirea mesajelor MQTT
 
-Până când business-service-ul este gata, verificați placa direct cu un client MQTT: **MQTTX** (grafic) sau `mosquitto_sub` / `mosquitto_pub`. Înlocuiți `popescu-ion` cu numele vostru și `esp32-a1b2c3` cu ID-ul plăcii (prima linie din Serial Monitor):
+Puteți verifica placa direct cu un client MQTT: **MQTTX** (grafic) sau `mosquitto_sub` / `mosquitto_pub`. Înlocuiți `dobrovolschi-alexandru` cu ID-ul vostru de student și `esp32-a1b2c3` cu ID-ul plăcii (prima linie din Serial Monitor):
 
 ```bash
 # tot traficul vostru
-mosquitto_sub -h control.aut.utcluj.ro -p 11188 -t 'ssatr/popescu-ion/#' -v
+mosquitto_sub -h control.aut.utcluj.ro -p 11188 -t 'ssatr/dobrovolschi-alexandru/#' -v
 
 # o comandă trimisă direct plăcii
-mosquitto_pub -h control.aut.utcluj.ro -p 11188 -t 'ssatr/popescu-ion/devices/esp32-a1b2c3/commands' -m 'STATUS'
+mosquitto_pub -h control.aut.utcluj.ro -p 11188 -t 'ssatr/dobrovolschi-alexandru/devices/esp32-a1b2c3/commands' -m 'STATUS'
 ```
 
 Brokerul este partajat și nu are parolă: oricine îl folosește vă poate citi și scrie topic-urile. Nu trimiteți pe el nimic privat.
@@ -139,3 +139,14 @@ arduino-cli compile --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc start/esp32_device
 arduino-cli upload  --fqbn esp32:esp32:esp32c3:CDCOnBoot=cdc -p /dev/ttyACM0 start/esp32_device
 arduino-cli monitor -p /dev/ttyACM0 --config baudrate=115200
 ```
+
+## 10. Aplicarea exemplelor la tema 02
+
+În soluția din [`start/esp32_device/esp32_device.ino`](../start/esp32_device/esp32_device.ino), exemplele sunt aplicate astfel:
+
+- `blink` explică de ce taskurile așteaptă separat, fără `delay()` în taskul periodic;
+- `periodic_jitter` arată modelul de eliberare absolută folosit cu `xTaskDelayUntil()`;
+- `mqtt_hello` corespunde infrastructurii deja implementate în `connection.cpp`; callback-ul ei doar transferă comenzile către coada taskului aperiodic;
+- conceptele FreeRTOS despre cozi și taskuri sunt folosite pentru transferul evenimentelor și comenzilor, fără a copia librăria auxiliară `rt.h`.
+
+După încărcarea firmware-ului și pornirea business-service-ului, verificați telemetria cu `show`, apoi testați o comandă de forma `esp32-xxxxxx STATUS` în consola business-service-ului. Înlocuiți `esp32-xxxxxx` cu ID-ul afișat la pornirea plăcii în Serial Monitor. ID-ul studentului din firmware și serviciul Java trebuie să fie același.

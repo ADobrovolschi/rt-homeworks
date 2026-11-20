@@ -6,9 +6,9 @@
 //
 //   wifi_connect();   // blochează până când placa este în rețea
 //   time_sync();      // după Wi-Fi: ora exactă, pentru epoch_ms()
-//   ...               // cozile voastre (TODO 0 a)
+//   ...               // cozile FreeRTOS, înainte să poată sosi comenzi
 //   mqtt_start();     // după cozi: comenzile primite ajung în command_received()
-//   ...               // taskurile voastre (TODO 0 b): publică prin mqtt_publish()
+//   ...               // taskurile: publică prin mqtt_publish()
 
 #pragma once
 
@@ -46,7 +46,7 @@ void mqtt_start(void);
 bool mqtt_publish(const char* kind, const char* text);
 
 // Apelată de clientul MQTT pentru fiecare comandă primită, de exemplu
-// "SET_INTERVAL 1000". O scrieți voi, în esp32_device.ino.
+// "SET_INTERVAL 1000". Implementarea din esp32_device.ino o pune în coada de comenzi.
 //
 // Rulează pe taskul clientului MQTT, nu pe taskurile voastre: doar puneți
 // comanda în coadă, nu o executați aici. text este valid doar în timpul
